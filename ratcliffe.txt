@@ -1,3 +1,7 @@
 Start: Tue, 10 Feb 2015 09:30:00 -0800 
 End: Tue, 10 Feb 2015 10:50:00 -0800 
 Tasks: Getting XAMPP running, a GIT repo, troubleshooting dev setup.
+
+Start: Tue, 10 Feb 2015 15:30:00 -0800 
+End: Tue, 10 Feb 2015 18:00:00 -0800 
+Tasks: Reviewing videos and reading docs. Start planning DB and webpage.
