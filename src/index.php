@@ -18,86 +18,72 @@ ini_set('display_errors', 'On');
 </form>
 
 <?php
+// If we received form data, process it first.
 if($_POST) {
-  // Names keys we're looking for in the POST data
-  $vidKeys = array(
-      'name',
-      'category',
-      'minutes'
-  );
+
+    $validated = TRUE;
+
+    $inName = $_POST['name'];
+    $inCat = $_POST['category'];
+
+    if ((string)(int)$_post['minutes'] === (string)$_POST['minutes']) {
+        // Check that the number of minutes is is >= 0
+        if ((int)$_POST['minutes'] >= 0) {
+            $inLength = $_POST['minutes'];
+        } else {
+            echo "<p>Video length must be at least 0.</p>";
+            $validated = FALSE;
+        }
+    } else {
+        echo "<p>Video length must be an integer.</p>";
+        $validated = FALSE;
+    }
   
-  // Holds the keys/values found in the POST data
-  $vidItems = array();
-  
-  // Flag to signal it's okay to continue
-  $validated = TRUE;
-  
-  // Build the vidItems array, check for integers and missing parameters
-  foreach ($vidKeys as $key => $value) {
-      if (isset($_POST[$value])) {
-          $getItem = htmlspecialchars($_POST[$value]);
-          // Check for an integer. (Type casting idea from StackOverflow, user nyson:
-          // http://stackoverflow.com/questions/3377537/checking-if-a-string-contains-an-integer
-          if ($value === "minutes") {
-              if ((string)(int)$getItem === (string)$getItem) {
-                  // Check that the number of minutes is is >= 0
-                  if ((int)$getItem >= 0) {
-                      $vidItems[$value] = $getItem;
-                  } else {
-                      echo "<p>Video length must be at least 0.</p>";
-                      $validated = FALSE;
-                  }
-              } else {
-                  echo "<p>Video length must be an integer.</p>";
-                  $validated = FALSE;
-              }
-          }
-          $vidItems[$value] = $getItem;
-      } else {
-          echo "<p>Missing parameter: $value</p>";
-          $validated = FALSE;
-      }
-  }
-  
-  //print_r($vidItems);
-  
-  // At this point, all values are validated.
-  if ($validated === TRUE) {
-      $db = new mysqli("localhost", "root", "root", "inventory_db");
-      if ($db->connect_errno) {
-          echo "Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error;
-      }
-      
-      if (!($stmt = $db->prepare("INSERT INTO inventory(name,category,length) VALUES (?,?,?)"))) {
-          echo "Prepare failed: (" . $db->errno . ") " . $db->error;
-      }
-      
-      if (!$stmt->bind_param("ssi", $vidItems['name'],$vidItems['category'], $vidItems['minutes'])) {
-          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-      
-      if (!$stmt->execute()) {
-          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-      
-    //  $stmt->close();
-  }
-  
-  if (!($stmt = $db->prepare("SELECT name, category, length FROM inventory"))) {
-      echo "Prepare failed: (" . $db->errno . ") " . $db->error;
-  }
-  
-  if (!$stmt->execute()) {
-      echo "Execute failed: (" . $db->errno . ") " . $db->error;
-  }
-  
-  $out_name    = NULL;
-  $out_cat = NULL;
-  $out_length = NULL;
-  
-  if (!$stmt->bind_result($out_name, $out_cat, $out_length)) {
-      echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-  }
+    // At this point, all values are validated.
+    if ($validated === TRUE) {
+        $db = new mysqli("localhost", "root", "root", "inventory_db");
+        if ($db->connect_errno) {
+            echo "Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error;
+        }
+        
+        if (!($stmt = $db->prepare("INSERT INTO inventory(name,category,length) VALUES (?,?,?)"))) {
+            echo "Prepare failed: (" . $db->errno . ") " . $db->error;
+        }
+        
+        if (!$stmt->bind_param("ssi", $inName,$inCat, $inLength)) {
+            echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+        }
+        
+        if (!$stmt->execute()) {
+            echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+        }
+        
+        $stmt->close();
+    }
+}
+
+// Populate the table with data from the database
+$db = new mysqli("localhost", "root", "root", "inventory_db");
+if ($db->connect_errno) {
+    echo "Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error;
+}
+ 
+if (!($stmt = $db->prepare("SELECT name, category, length, rented FROM inventory"))) {
+    echo "Prepare failed: (" . $db->errno . ") " . $db->error;
+}
+
+if (!$stmt->execute()) {
+    echo "Execute failed: (" . $db->errno . ") " . $db->error;
+}
+
+$outName    = NULL;
+$outCat = NULL;
+$outLength = NULL;
+$outStatus = NULL;
+
+if (!$stmt->bind_result($outName, $outCat, $outLength, $outStatus)) {
+    echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+}
 ?>
 <table border="1">
   <tbody>
@@ -111,16 +97,10 @@ if($_POST) {
 <?php
 
   while ($stmt->fetch()) {
-      printf("<tr>\n\t<td>%s</td>\n\t<td>%s</td>\n\t<td>%d</td>\n</tr>\n", $out_name, $out_cat, $out_length);
+      printf("<tr>\n\t<td>%s</td>\n\t<td>%s</td>\n\t<td>%d</td>\n\t<td>%d</td>\n</tr>\n", $outName, $outCat, $outLength, $outStatus);
   }
-  $stmt->close();
-}
 
-    /*
-    <tr>
-      <td>Data</td>
-    </tr>
-     */
+  $stmt->close();
 ?>
   </tbody>
 </table>
