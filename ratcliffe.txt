@@ -9,3 +9,11 @@ Tasks: Reviewing videos and reading docs. Start planning DB and webpage.
 Start: Wed, 11 Feb 2015 12:30:00 -0800 
 End: Wed, 11 Feb 2015 14:30:00 -0800 
 Tasks: Reviewing videos and reading docs. Start coding.
+
+Start: Fri, 13 Feb 2015 13:00:00 -0800 
+End: Fri, 13 Feb 2015 17:00:00 -0800 
+Tasks: Row button work. Various database fixes.
+
+Start: Sun, 15 Feb 2015 12:30:00 -0800 
+End: Sun, 15 Feb 2015 15:50:00 -0800 
+Tasks: Worked on issues with database functionality (add/filter/delete).
