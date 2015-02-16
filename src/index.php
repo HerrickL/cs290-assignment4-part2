@@ -9,6 +9,14 @@ if ($db->connect_errno) {
 	echo "ERROR: Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error;
 }
 
+// Check for duplicate name
+function isUniqueName($vidName, $db) {
+	if (! ($nameList = $db->query ( "SELECT name FROM inventory WHERE name=\"{$vidName}\"" ))) {
+		echo "Name query failed: (" . $db->errno . ") " . $db->error;
+	}
+	return mysqli_num_rows($nameList);
+}
+
 // Delete a video
 function deleteVid($vidId, $db) {
 	if (! ($db->query ( "DELETE FROM inventory WHERE id={$vidId}" ))) {
@@ -57,46 +65,49 @@ if ($_POST) {
 	// up the variables that will hold the video info.
 	if (isset ( $_POST ['name'] ) && ($_POST ['name'] != NULL)) {
 		$inName = $_POST ['name'];
-		
-		// Did we get a category? If so, use it; otherwise, set to "Uncategorized".
-		if ((isset ( $_POST ['category'] )) && ($_POST ['category'] != NULL)) {
-			$inCat = $_POST ['category'];
+		if(isUniqueName($inName, $db) == 0) {
+           // Did we get a category? If so, use it; otherwise, set to "Uncategorized".
+           if ((isset ( $_POST ['category'] )) && ($_POST ['category'] != NULL)) {
+                   $inCat = $_POST ['category'];
+           } else {
+                   $inCat = "[Uncategorized]";
+           }
+           
+           // Did we get a video length? If so, either validate it and use it or
+           // stop the collection process and issue an error.
+           if ((isset ( $_POST ['minutes'] ) && ($_POST ['minutes'] != NULL))) {
+                   if (( string ) ( int ) $_POST ['minutes'] === ( string ) $_POST ['minutes']) {
+                           // Check that the number of minutes is is >= 0
+                           if (( int ) $_POST ['minutes'] >= 0) {
+                                   $inLength = $_POST ['minutes'];
+                           } else {
+                                   echo "<p>ERROR: Video length must be a positive number.</p>";
+                                   $validated = FALSE;
+                           }
+                   } else {
+                           echo "<p>ERROR: Video length must be an integer.</p>";
+                           $validated = FALSE;
+                   }
+           } else {
+                   // NULL length is okay. As long as it isn't a negative integer or string.
+                   $inLength = NULL;
+           }
+           
+           // At this point, all values should be validated. If so, add to the DB.
+           if ($validated === TRUE) {
+                   if (! ($stmt = $db->prepare ( "INSERT INTO inventory(name,category,length) VALUES (?,?,?)" ))) {
+                           echo "ERROR: Prepare failed: (" . $db->errno . ") " . $db->error;
+                   }
+                   if (! $stmt->bind_param ( "ssi", $inName, $inCat, $inLength )) {
+                           echo "ERROR: Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+                   }
+                   if (! $stmt->execute ()) {
+                           echo "ERROR: Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+                   }
+                   $stmt->close ();
+           }
 		} else {
-			$inCat = "[Uncategorized]";
-		}
-		
-		// Did we get a video length? If so, either validate it and use it or
-		// stop the collection process and issue an error.
-		if ((isset ( $_POST ['minutes'] ) && ($_POST ['minutes'] != NULL))) {
-			if (( string ) ( int ) $_POST ['minutes'] === ( string ) $_POST ['minutes']) {
-				// Check that the number of minutes is is >= 0
-				if (( int ) $_POST ['minutes'] >= 0) {
-					$inLength = $_POST ['minutes'];
-				} else {
-					echo "<p>ERROR: Video length must be a positive number.</p>";
-					$validated = FALSE;
-				}
-			} else {
-				echo "<p>ERROR: Video length must be an integer.</p>";
-				$validated = FALSE;
-			}
-		} else {
-			// NULL length is okay. As long as it isn't a negative integer or string.
-			$inLength = NULL;
-		}
-		
-		// At this point, all values should be validated. If so, add to the DB.
-		if ($validated === TRUE) {
-			if (! ($stmt = $db->prepare ( "INSERT INTO inventory(name,category,length) VALUES (?,?,?)" ))) {
-				echo "ERROR: Prepare failed: (" . $db->errno . ") " . $db->error;
-			}
-			if (! $stmt->bind_param ( "ssi", $inName, $inCat, $inLength )) {
-				echo "ERROR: Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-			}
-			if (! $stmt->execute ()) {
-				echo "ERROR: Execute failed: (" . $stmt->errno . ") " . $stmt->error;
-			}
-			$stmt->close ();
+			echo "<p>ERROR: Video name must be unique.</p>\n";
 		}
 	} elseif ((isset ( $_POST ['category'] ) || (isset ( $_POST ['minutes'] )))) {
 		// Getting no "name" value is okay if the "add" form has no other data.
@@ -112,6 +123,7 @@ if ($_POST) {
 <head>
 <meta charset="utf-8">
 <title>CS290 Assignment 4 Part 2 - Inventory</title>
+<link rel="stylesheet" href="style.css" type="text/css" media="screen">
 </head>
 <body>
 
