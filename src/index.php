@@ -10,14 +10,14 @@ if ($db->connect_errno) {
 }
 
 // Delete a video
-function deleteVid($vidId) {
+function deleteVid($vidId, $db) {
 	if (! ($db->query ( "DELETE FROM inventory WHERE id={$vidId}" ))) {
 		echo "Delete failed: (" . $db->errno . ") " . $db->error;
 	}
 }
 
 // Check in/out a video
-function checkInOut($vidId) {
+function checkInOut($vidId, $db) {
 	if (! ($db->query ( "UPDATE inventory SET rented = !rented WHERE id={$vidId}" ))) {
 		echo "Update failed: (" . $db->errno . ") " . $db->error;
 	}
@@ -35,13 +35,13 @@ if ($_POST) {
 	// If the user is checking a video in/out...
 	if(isset($_POST['chkInOut'])) {
 		$vidId = $_POST['chkInOut'];	
-		checkInOut($vidId);
+		checkInOut($vidId, $db);
 	}
 	
 	// If the user is deleting a video...
 	if(isset($_POST['delete'])) {
 		$vidId = $_POST ['delete'];
-		deleteVid($vidId);
+		deleteVid($vidId, $db);
 	}
 	
 	// If the user is clearing out the table...The database object isn't
@@ -180,7 +180,7 @@ if (! $stmt->bind_result ( $outId, $outName, $outCat, $outLength, $outStatus )) 
 	echo "Binding output parameters failed: (" . $stmt->errno . ") " . $stmt->error;
 }
 ?>
-<form action="editRow.php" method="post" name="vidTableForm">
+	<form action="index.php" method="post" name="vidTableForm">
 		<table border="1">
 			<tbody>
 				<tr>
