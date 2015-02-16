@@ -3,7 +3,6 @@ error_reporting ( E_ALL );
 ini_set ( 'display_errors', 'On' );
 
 if ($_POST) {
-	print_r($_POST);
 	$db = new mysqli ( "localhost", "root", "root", "inventory_db" );
 	if ($db->connect_errno) {
 		echo "Failed to connect to MySQL: (" . $db->connect_errno . ") " . $db->connect_error;
